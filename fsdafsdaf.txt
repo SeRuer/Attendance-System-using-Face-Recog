@@ -1,0 +1,330 @@
+
+ui, _ = loadUiType("mainWindow.ui")
+login, _ = loadUiType("login.ui")
+
+
+# Connects to the userAuthentication firebase
+firebaseConfig = {"apiKey": "AIzaSyBG9PWCA9iF7CUqBH83HylWYI-JaJSj0d8",
+                  "authDomain": "userauthentication-16b5e.firebaseapp.com",
+                  "databaseURL": "",
+                  "projectId": "userauthentication-16b5e",
+                  "storageBucket": "userauthentication-16b5e.appspot.com",
+                  "messagingSenderId": "588329579752",
+                  "appId": "1:588329579752:web:df2d6d9777a2f3a684855d",
+                  "measurementId": "G-BDZ1E4KZX2"}
+
+firebase = pyrebase.initialize_app(firebaseConfig)
+auth = firebase.auth()
+conn = sqlite3.connect('FaceFoundation.db')
+curs = conn.cursor()
+
+class Login(QWidget, login):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.setupUi(self)
+        self.password.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.enterButton.clicked.connect(self.loginAction)
+        self.invalid.setVisible(False)
+        self.show()
+
+    def loginAction(self):
+        email = self.email.text()
+        password = self.password.text()
+        try:
+            auth.sign_in_with_email_and_password(email, password)
+            self.mainwindow = MainApplication()
+            self.mainwindow.show()
+            print("Succesfully logged in with this email:", email)
+        except:
+            self.invalid.setVisible(True)
+
+
+class MainApplication(QMainWindow, ui):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.Function_Buttons()
+        self.UI_Interface()
+
+
+        self.Show_Students()
+        self.Add_Students()
+        self.Search_Students()
+        self.View_Attendance()
+
+        self.Gender_Combobox()
+
+
+    def UI_Interface(self):
+        self.tabWidget.tabBar().setVisible(False)
+
+    def Function_Buttons(self):
+        self.deleteButton.clicked.connect(self.deleteData)
+        self.submitButton.clicked.connect(self.addStudents)
+        self.submitButton.clicked.connect(self.submitData)
+
+        self.takePhoto_button.clicked.connect(self.takePictures)
+        self.trianface_button.clicked.connect(self.trainRecognition)
+
+    ###############################################################################
+    #################-----1 Add Student Functionalities -----######################
+    def addStudents(self):
+        self.loadData()
+
+    # This is for the button which will add the iputted data into the sqlite table
+    def submitData(self):
+        conn = sqlite3.connect('FaceFoundation.db')
+        curs = conn.cursor()
+        print("Connected to the database")
+        # allows the user to type into one of the boxes shown
+        idNumber = self.lineEdit_idNumber.text()
+        username = self.lineEdit_username.text()
+        degree = self.lineEdit_degree.text()
+        gender = self.lineEdit_gender.text()
+        # The query that will insert the data into the FaceFoundation Database
+        insertQuery = ("INSERT INTO FaceFoundation"
+                       "(id, name, major, gender)"
+                       "VALUES (%s, %s, %s, %s)")
+        # This will push the data
+        insertQueryData = (idNumber, username, degree, gender)
+        curs.execute(insertQuery, insertQueryData)
+        self.loadData()  # Loads the data of the table
+        self.conn.commit()
+        conn.close()  # Closes connection one job is finished
+        self.statusBar().showMessage("New student has succesfully been added")
+        curs.close()
+
+
+
+    ###############################################################################
+    #################----- Delete Student Functionalities -----######################
+    def deleteData(self):
+        conn = sqlite3.connect('FaceFoundation.db')
+        curs = conn.cursor()
+        print("Connected to the database")
+        eliminate = "SELECT * FROM FaceFoundation"
+        rely = curs.execute(eliminate)
+
+        for row in enumerate(rely):
+            if row[0] == self.tableWidget.currentRow():
+                info = row[1]
+                id = info[0]
+                name = info[1]
+                major = info[2]
+                gender = info[3]
+                photo = info[4]
+
+                curs.execute("DELETE FROM FaceFoundation WHERE idNumber=? username=? degree=? gender=? photo=?",
+                             (id, name, major, gender, photo))
+                conn.commit()
+                self.loadData()
+
+    def messagebox(self, title, message):
+        letter = QtWidgets.QMessageBox()
+        letter.setWindowTitle(title)
+        letter.setText(message)
+        letter.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        letter.exec_()
+
+    # Load Data is used to show the data in the table
+    def loadData(self):
+        db = QSqlDatabase.addDatabase("QSQLITE")
+        db.setDatabaseName("FaceFoundation.db")
+        db.open()
+        # Creates the table widget
+        self.tableWidget.setColumnWidth(0, 300)
+        self.tableWidget.setColumnWidth(1, 250)
+        self.tableWidget.setColumnWidth(2, 300)
+        tableView = QtWidgets.QTableView()
+        # Inputs the headers on top of the table
+        self.tableWidget.setHorizontalHeaderLabels(["ID", "Full Name", "Major", "Gender"])
+
+        # Extracting the data from the database so it can be inputted
+        query = QtSql.QSqlQuery()
+        outputData = query.exec_("SELECT * FROM Class")
+        if outputData:
+            model = QtSql.QSqlTableModel(db=db)
+            model.setQuery(query)
+            tableView.setModel(model)
+            tableView.show()
+            # This will create the table if it doesn't exist
+        curs.execute(
+            "CREATE TABLE IF NOT EXISTS Class(id INTEGER PRIMARY KEY, Name STRING, Major STRING, Gender text")
+        conn.commit()
+        conn.close()
+
+    ###############################################################################
+    #################----- Search Student Functionalities -----######################
+
+    def searchStudent(self):
+        # This will load the user interface database
+
+        conn = sqlite3.connect('FaceFoundation.db')
+        curs = conn.cursor()
+        print("Connected to the database")
+        # Sorts the table widget
+        self.tableWidget.setColumnWidth(0, 300)
+        self.tableWidget.setColumnWidth(1, 250)
+        self.tableWidget.setColumnWidth(2, 300)
+
+        # Inserts the header labels for each column
+        self.tableWidget.setHorizontalHeaderLabels(["ID", "Full Name", "Major", "Gender"])
+        self.loadData()  # This is meant to load the data of the table
+        self.submitButton.clicked.connect(self.submitData)  # This is connected to the submitData function
+
+    ###############################################################################
+    #################----- Search Student Functionalities -----######################
+    def viewAttendance(self):
+        conn = sqlite3.connect('FaceFoundation.db')
+        curs = conn.cursor()
+        print("Connected to the database")
+
+        curs.execute("SELECT * FROM Attendance ")
+
+
+    ###############################################################################
+    #################----- Taking pictures of person functionality -----######################
+
+
+    def takePictures(self):
+        captureDevice = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        detect = "haarcascade_frontalface_alt"
+        detectEyes = "haarcascade_eye.xml"
+        self.checkCascade()
+        ID = input("Input user ID:   ")
+        if (self.count_pictures(ID)):
+            faceCascade = cv2.CascadeClassifier(detect)
+            eye_cascade = cv2.CascadeClassifier(detectEyes)
+            counter = 0
+            # creating the video capture
+            captureDevice = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            captureDevice.set(3, 650)  # Sets the camera width
+            captureDevice.set(4, 480)  # Sets the camera height
+            # Setting the window size for the face
+            minW = 0.1 * captureDevice.get(3)
+            minH = 0.1 * captureDevice.get(4)
+            writing = cv2.FONT_HERSHEY_TRIPLEX
+
+        while (True):
+            ret, frame = captureDevice.read()
+            # For now this will convert the frames to grey scale
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # detects the frames for different sizes
+            faces = faceCascade.detectMultiScale(gray, 1.2, 6, minSize=(int(minW), int(minH)),
+                                                 flags=cv2.CASCADE_SCALE_IMAGE)
+
+            # This will loop for every single student
+            for (x, y, w, h) in faces:
+                print(x, y, w, h)
+                # Crop the photo frame into a rectangle
+                # If faces found
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                roi_color = (frame[y:y + h, x:x + w])
+                ID, conf = detect.predict(gray[y:y + h, x:x + w])
+            eyes = eye_cascade.detectMultiScale(roi_color)
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+                # add the sample number
+                counter = counter + 1
+                # Save the face into the folder
+                cv2.imwrite("Dataset" + os.sep + ID + str(counter) + ".jpg", gray[y:y + h, x:x + w])
+                # Showcase the frame
+                cv2.imshow('Frame', frame)
+                # Wait for only 80 milli
+            if cv2.waitKey(100) & 0xFF == ord('f'):
+                break
+                # So this will break if the pictures are more than 100
+            elif counter > 200:  # decreased the pictures due to scalability issues
+                break
+
+            captureDevice.release()
+            cv2.destroyAllWindows()
+
+
+# Counter for images
+def count_pictures(k):
+    try:
+        float(k)
+        return True
+    except ValueError:
+        pass
+
+    try:
+        import unicodedata
+        unicodedata.numeric(k)
+        return True
+    except (TypeError, ValueError):
+        pass
+
+    return False
+
+
+def checkCascade(self):
+    exists = os.path.isfile("haarcascade_frontalface_alt")
+    itExists = os.path.isfile("haarcascade_eye.xml")
+    if (exists and itExists):
+        pass
+    else:
+        self.statusBar().showMessage("FILE IS MISSING")
+
+###############################################################################
+#################----- Train pictures of person functionality -----######################
+
+# Used this as reference - https://github.com/mayank1819999/Facial-Recognition-based-attendance-system-master/blob/master/02_face_training.py
+# https://github.com/ni-chi-Tech/Face-Recognition/blob/master/main.py
+# Check this to change it up https://github.com/mickey9801/opencv_facerecognition/blob/master/trainer.py
+
+def extractImages(path):
+    recogniser = cv2.face.LBPHFaceRecognizer_create()
+    detect = "haarcascade_frontalface_alt"
+    faceCascade = cv2.CascadeClassifier(detect)
+    # Extract the files that will be inside of the Dataset folder
+    dirs = [os.path.join(path,f) for f in os.listdir("Dataset/")]
+    facesSample = []
+    ID = []
+
+    for dirs in dirs:
+        frames = Image.open(dirs).convert("L")  # This is what will make it change
+        img_numpy = np.array(frames, "uint8")
+        faces = faceCascade.detectMultiScale(img_numpy)
+        identification = int(os.path.split(dirs)[-1].split(".")[1])
+        for (x, y, w, h) in faces:
+            facesSample.append(img_numpy[y:y + h, x:x + w])
+            print(ID)
+            ID.append(identification)
+    return facesSample, ID
+    cv2.waitKey(1)
+    cv2.destroyAllWindows()
+    faces, ID = extractImages("Dataset/")
+    recogniser.train(faces, np.array(ID))
+    recogniser.save("trainner/trainner.yml")
+
+
+def trainRecognition(self):
+    recogniser = cv2.face.LBPHFaceRecognizer_create()
+    eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
+    detect = "haarcascade_frontalface_alt"
+    faceCascade = cv2.CascadeClassifier(detect)
+    facesSample, ID = extractImages("Dataset")
+    recogniser.train(facesSample, np.array(ID))
+    recogniser.save("trainner/trainner.yml")
+
+
+
+
+
+def main():
+    application = QApplication(sys.argv)
+    win = Login()
+    win.show()
+    application.exec_()
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+self.mainTwo = MainApplication()
+            self.close()
+            self.mainTwo.show()
