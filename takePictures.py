@@ -1,6 +1,5 @@
 import cv2
 import os
-import imutils
 import numpy as np
 import pandas as pd
 import datetime
@@ -46,7 +45,6 @@ if (count_pictures(ID) and studentName.isalpha()):
         #print("Convert function #2")
         # detects the frames for different sizes
         faces = faceCascade.detectMultiScale(gray, 2, 6)
-        # This will loop for every single student
         #print("Loop is about to start")
         for (x, y, w, h) in faces:
             print([x, y, w, h])
@@ -61,10 +59,10 @@ if (count_pictures(ID) and studentName.isalpha()):
 
             for (ex, ey, ew, eh) in eye:
                 cv2.rectangle(colour, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
-            # noinspection PyArgumentList
-            smileFace = expressionCascade.detectMultiScale(grayGray)
-            for (xx, yy, ww, hh) in smileFace:
-                cv2.rectangle(colour, (xx, yy), (xx + ww, yy + hh), (0, 255,0), 2)
+
+                smileFace = expressionCascade.detectMultiScale(grayGray)
+                for (xx, yy, ww, hh) in smileFace:
+                    cv2.rectangle(colour, (xx, yy), (xx + ww, yy + hh), (0, 255,0), 2)
 
             counter = counter + 1
             # Save the face into the folder
@@ -76,7 +74,7 @@ if (count_pictures(ID) and studentName.isalpha()):
             cv2.destroyAllWindows()
             break
                 # So this will break if the pictures are more than 100
-        elif counter > 100:  # decreased the pictures due to scalability issues
+        elif counter > 1000:
             break
 
 

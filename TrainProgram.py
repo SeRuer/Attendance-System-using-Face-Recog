@@ -26,5 +26,6 @@ def extractImages(path):
 print("This might take a while....")
 faces,ID = extractImages(path)
 recogniser.train(faces, np.array(ID))
-recogniser.write("trainner/trainner.yml")
+#Insert model name in the ""
+recogniser.write("trainner/")
 print("Done! Numbers of faces have been trained")

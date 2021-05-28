@@ -7,7 +7,6 @@ import sqlite3
 camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 camera.set(3, 650)  # Sets the camera width
 camera.set(4, 480)  # Sets the camera height
-print("Test")
 # Creates the window size of for the face
 minW = 0.1 * camera.get(3)
 minH = 0.1 * camera.get(4)
@@ -17,11 +16,13 @@ eye_module = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml"
 
 # recogniser = cv2.face.LBPHFacerecognizer_create() # This will rea the LBPH method
 recogniser = cv2.face.LBPHFaceRecognizer_create()
-recogniser.read(r"/Users/TMuja/Documents/Attempt/trainner/trainner.yml")  # This is where the YML file will be read
+#Insert path to the model
+recogniser.read(r"")  # This is where the YML file will be read
 
 
 def getStudent(ID):
-    connection = sqlite3.connect(r"/Users/TMuja/Documents/Attempt/FaceBase.db")
+    #Insert path to database
+    connection = sqlite3.connect(r"")
     command = "SELECT * FROM Class WHERE ID=" + str(ID)
     cursor = connection.execute(command)
     student = None
@@ -29,9 +30,6 @@ def getStudent(ID):
         student = row
     connection.close()
     return student
-
-
-print("Test 2")
 
 # This is where the detection logic will occur
 while True:
@@ -55,13 +53,14 @@ while True:
                 ID, conf = recogniser.predict(gray[y:y + h, x:x + w])
                 student = getStudent(ID)
                 if (student != None):
-                    print(student, face)
-                    if (conf > 50):
-                        print(student[1] + ".")
+                    #print(student, face)
+                    if (conf < 60):
+                       # print(student[1] + ".")
                         student = getStudent(ID)
-                        connection = sqlite3.connect(r"/Users/TMuja/Documents/Attempt/FaceBase.db")
+                       #inser tpath to database
+                        connection = sqlite3.connect(r"")
                         time = datetime.datetime.now()
-                        print("Added")
+                       # print("Added")
                         command = "UPDATE Class SET Attendance='Present', Time = datetime() WHERE ID=" + str(ID)
                         cursor = connection.execute(command)
                         connection.commit()
@@ -71,12 +70,13 @@ while True:
                     else:
                         ID = "unknown"
                         if (conf > 75):  # Depends on the quality on training
-                            print("Unknown Individual")
-                            # fileLine = len(os.listdir(r"/Users/TMuja/Documents/Attempt/UnknownPeople"))+1
-                            cv2.imwrite( r"/Users/TMuja/Documents/Attempt/UnknownPeople/" + os.sep + "TaggedUnknown" + ".jpg",
+                            print(conf,"Can't recognise")
+                            cv2.imwrite(
+                                #Insert path to the unknownPeople folder
+                                r"" + os.sep + "TaggedUnknown" + ".jpg",
                                 gray[y:y + h, x:x + w])
                     writing = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame, str(ID), (x + 5, y - 5), writing, 2, (255, 255, 255), 1)
+                    cv2.putText(frame, str(ID), (x + 5, y - 5), writing, 1, (0, 0, 255), 1)
 
         cv2.imshow('Facial Recognition program', frame)  # show the camera
         if cv2.waitKey(1) == ord("q"):  # Q to exit

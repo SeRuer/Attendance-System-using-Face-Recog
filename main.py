@@ -15,15 +15,15 @@ import matplotlib.dates as mdates
 from matplotlib import style
 style.use('Solarize_Light2')
 
-# Connects to the userAuthentication firebase
-firebaseConfig = {"apiKey": "AIzaSyBG9PWCA9iF7CUqBH83HylWYI-JaJSj0d8",
-                  "authDomain": "userauthentication-16b5e.firebaseapp.com",
+#Insert Firebase API in here
+firebaseConfig = {"apiKey": "",
+                  "authDomain": "",
                   "databaseURL": "",
-                  "projectId": "userauthentication-16b5e",
-                  "storageBucket": "userauthentication-16b5e.appspot.com",
-                  "messagingSenderId": "588329579752",
-                  "appId": "1:588329579752:web:df2d6d9777a2f3a684855d",
-                  "measurementId": "G-BDZ1E4KZX2"}
+                  "projectId": "",
+                  "storageBucket": "",
+                  "messagingSenderId": "",
+                  "appId": "",
+                  "measurementId": ""}
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -72,7 +72,7 @@ class MainApplication(QMainWindow):
         self.reportButton.clicked.connect(self.dataGraph)
 
 
-    ###############################################################################
+
     #################-----1 Add Student Functionalities -----######################
 
     def submitData(self):
@@ -120,9 +120,11 @@ class MainApplication(QMainWindow):
                                  "AND Time=?",
                                  (id, name, major, gender, attendance, time))
                     conn.commit()
+                    self.statusBar().showMessage("S`tudent has succesfully been deleted")
                     self.loadData()
+                    self.loadAttendance()
 
-    ###############################################################################
+
     #################----- Load Widget data  -----######################
     def loadData(self):
         self.conn = sqlite3.connect("FaceBase.db")
@@ -165,7 +167,7 @@ class MainApplication(QMainWindow):
 
 
 
-    ###############################################################################
+
     #################----- Search Student Functionalities -----######################
 
     def searchStudent(self):
@@ -197,11 +199,6 @@ class MainApplication(QMainWindow):
         plt.show()
 
 
-
-
-
-
-    ###############################################################################
     #################----- Taking pictures of person functionality -----######################
 
     # Counter for images
@@ -266,12 +263,8 @@ class MainApplication(QMainWindow):
 
         captureDevice.release()
 
-    ###############################################################################
-    #################----- Train pictures of person functionality -----######################
 
-    # Used this as reference - https://github.com/mayank1819999/Facial-Recognition-based-attendance-system-master/blob/master/02_face_training.py
-    # https://github.com/ni-chi-Tech/Face-Recognition/blob/master/main.py
-    # Check this to change it up https://github.com/mickey9801/opencv_facerecognition/blob/master/trainer.py
+    #################----- Train pictures of person functionality -----######################
 
     def assure_path_exists(path):
         dir = os.path.dirname(path)
@@ -305,8 +298,6 @@ class MainApplication(QMainWindow):
         recogniser.train(faceImages, np.array(ID))
         recogniser.save("trainner/trainner.yml")
         print("Done")
-
-
 
 
 def main():
